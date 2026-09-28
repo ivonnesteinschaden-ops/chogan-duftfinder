@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Chogan Duft-Finder</title>
+<style>
+body{font-family:Arial,sans-serif;margin:0;background:#f7f5f3;color:#222}
+.wrap{max-width:680px;margin:30px auto;padding:18px}
+.card{background:#fff;border:1px solid #ddd;border-radius:20px;padding:25px;box-shadow:0 3px 15px #00000010}
+h1,h2{text-align:center}.muted{color:#666}.center{text-align:center}
+button{font:inherit;border:0;border-radius:12px;padding:13px 18px;cursor:pointer}
+.primary{background:#222;color:#fff}.secondary{background:#eee}
+.option{display:block;width:100%;text-align:left;background:#fff;border:1px solid #ddd;margin:9px 0}
+.option.selected{background:#f5e3df;border-color:#c77f70}
+.check{float:right;opacity:.2}.selected .check{opacity:1}
+.actions{display:flex;justify-content:space-between;gap:10px;margin-top:22px}
+.bar{height:7px;background:#ddd;border-radius:9px;overflow:hidden}.fill{height:100%;background:#222}
+.result{margin-top:18px}.duft{border:1px solid #ddd;border-radius:14px;padding:15px;margin:10px 0}
+.hidden{display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div id="start" class="card center">
+<div style="font-size:50px">💐</div>
+<h1>Welcher Chogan Duft passt zu dir?</h1>
+<p class="muted">Bei jeder Frage kannst du mehrere Antworten auswählen. Am Ende bekommst du drei passende Chogan-Düfte.</p>
+<button class="primary" onclick="begin()">✨ Duft-Finder starten</button>
+</div>
+
+<div id="quiz" class="hidden">
+<div class="muted" id="counter"></div>
+<div class="bar"><div id="fill" class="fill" style="width:0"></div></div>
+<div class="card" style="margin-top:15px">
+<h2 id="question"></h2>
+<p class="muted">Mehrere Antworten möglich 😊</p>
+<div id="options"></div>
+<div class="actions">
+<button class="secondary" id="back" onclick="previous()">← Zurück</button>
+<button class="primary" id="next" onclick="next()">Weiter →</button>
+</div>
+</div>
+</div>
+
+<div id="result" class="hidden result"></div>
+</div>
+
+<script>
+const questions=[
+["Für wen suchst du einen Duft?",[["🌸 Damen","W"],["🖤 Herren","M"],["✨ Unisex","U"]]],
+["Welche Duftwirkungen gefallen dir?",[
+["🌿 Frisch & sauber",["fresh","clean"]],["🌸 Blumig & feminin",["floral","elegant"]],
+["🍓 Fruchtig",["fruity"]],["🍦 Süß & gourmand",["sweet","vanilla"]],
+["🔥 Sinnlich & verführerisch",["sensual"]],["🖤 Intensiv & geheimnisvoll",["intense","oriental"]],
+["🪵 Holzig & edel",["woody"]],["🌶️ Würzig",["spicy","warm"]]]],
+["Welche Duftnoten möchtest du gerne riechen?",[
+["🍋 Zitrone / Bergamotte",["citrus","fresh"]],["🌹 Rose",["rose","floral"]],
+["🌼 Jasmin / weiße Blüten",["floral"]],["🍓 Beeren / Früchte",["fruity"]],
+["🥥 Kokos",["coconut","creamy"]],["🍦 Vanille / Tonka",["vanilla","sweet"]],
+["☕ Kaffee / Kakao",["coffee","sweet"]],["🪵 Sandelholz / Zedernholz",["woody"]],
+["🌶️ Pfeffer / Gewürze",["spicy"]],["🧡 Amber / Moschus",["amber","sensual"]]]],
+["Wie süß darf dein Duft sein?",[
+["🤍 Gar nicht süß",["fresh","clean"]],["🌸 Leicht süß",["floral"]],
+["🍑 Fruchtig-süß",["fruity","sweet"]],["🍦 Cremig & vanillig",["vanilla","sweet"]],
+["🍭 Sehr süß",["sweet"]],["🔥 Süß & intensiv",["sweet","intense"]]]],
+["Wie soll dein Parfum wahrgenommen werden?",[
+["🌬️ Dezent",["clean","fresh"]],["😊 Angenehm wahrnehmbar",["fresh","floral"]],
+["✨ Elegant & präsent",["elegant"]],["🔥 Sinnlich & deutlich",["sensual","warm"]],
+["💥 Intensiv & auffällig",["intense"]],["🖤 Große Duftspur",["intense","sensual"]]]],
+["Wann möchtest du den Duft tragen?",[
+["☀️ Alltag",["fresh","clean"]],["💼 Arbeit / Büro",["clean","elegant"]],
+["👟 Freizeit",["fresh","fruity"]],["❤️ Date",["sensual","sweet"]],
+["🌙 Abend",["sensual","warm"]],["🥂 Party",["sweet","intense"]],
+["💎 Besondere Anlässe",["elegant","floral"]],["🌈 Jeden Anlass",["elegant","fresh"]]]],
+["Welche Beschreibung passt zu deiner Persönlichkeit?",[
+["🌿 Natürlich & unkompliziert",["fresh","clean"]],["🌸 Feminin & verspielt",["floral","fruity"]],
+["👑 Elegant & stilvoll",["elegant"]],["🔥 Selbstbewusst & leidenschaftlich",["sensual","intense"]],
+["🍭 Süß & verspielt",["sweet","fruity"]],["🖤 Geheimnisvoll",["oriental","intense"]],
+["🌲 Ruhig & bodenständig",["woody","warm"]],["⚡ Sportlich & aktiv",["fresh","aquatic"]]]],
+["Welche Duftfamilien sprechen dich an?",[
+["🍋 Zitrisch",["citrus"]],["🌿 Frisch / Aquatisch",["fresh","aquatic"]],
+["🌸 Floral",["floral"]],["🍓 Fruchtig",["fruity"]],["🍰 Gourmand",["sweet","vanilla"]],
+["🌲 Holzig",["woody"]],["🌶️ Würzig",["spicy"]],["🧡 Amber / Orientalisch",["amber","oriental"]],
+["🧼 Pudrig / Moschus",["powdery","clean"]]]],
+["Für welche Jahreszeiten suchst du einen Duft?",[
+["🌷 Frühling",["floral","fresh"]],["☀️ Sommer",["fresh","citrus"]],
+["🍂 Herbst",["warm","woody"]],["❄️ Winter",["sweet","vanilla","intense"]],
+["🌈 Ganzjährig",["elegant","fresh"]]]],
+["Was soll man über deinen Duft sagen?",[
+["„Du riechst so frisch!“",["fresh","clean"]],["„Du riechst wunderschön!“",["floral","elegant"]],
+["„Du riechst richtig lecker!“",["sweet","vanilla"]],["„Wow – was ist das für ein Duft?“",["intense","sensual"]],
+["„Der Duft passt perfekt zu dir!“",["elegant"]],["„Sehr verführerisch!“",["sensual","sweet"]],
+["„Sehr außergewöhnlich!“",["oriental","intense"]]]],
+["Was möchtest du eher vermeiden?",[
+["❌ Zu süß",["fresh","citrus"]],["❌ Zu schwer",["fresh","clean"]],
+["❌ Zu blumig",["woody","spicy"]],["❌ Zu frisch",["warm","sweet"]],
+["❌ Zu pudrig",["fruity","citrus"]],["❌ Zu holzig",["floral","fruity"]],
+["❌ Zu intensiv",["fresh","clean"]]]]
+];
+
+const catalog=[
+["006","Opium","W",["warm","oriental","spicy"]],["007","J'adore","W",["floral","elegant","fresh"]],
+["010","Alien","W",["oriental","intense","floral"]],["011","Light Blue","W",["fresh","citrus","fruity"]],
+["019","Lady Million","W",["sweet","floral","sensual"]],["023","Hypnotic Poison","W",["sweet","vanilla","sensual"]],
+["024","N°5","W",["floral","powdery","elegant"]],["028","Angel","W",["sweet","oriental","intense"]],
+["039","Miss Dior Chérie","W",["fruity","floral","sweet"]],["042","La Vie Est Belle","W",["sweet","vanilla","floral"]],
+["047","Crystal Noir","W",["oriental","sensual","spicy"]],["051","Coco Mademoiselle","W",["citrus","floral","elegant"]],
+["055","Black Opium","W",["sweet","coffee","sensual"]],["067","Olympéa","W",["sweet","vanilla","sensual"]],
+["071","Allure","W",["citrus","floral","elegant"]],["076","Acqua di Gioia","W",["fresh","citrus","clean"]],
+["080","Sì","W",["fruity","floral","elegant"]],["085","Chance","W",["fresh","floral","elegant"]],
+["089","Mon Paris","W",["fruity","sweet","floral"]],["090","Poison Girl","W",["sweet","vanilla","sensual"]],
+["115","Idôle","W",["floral","fresh","elegant"]],["119","Scandal","W",["sweet","warm","sensual"]],
+["121","L'Interdit","W",["floral","sensual","intense"]],["122","Libre","W",["citrus","floral","intense"]],
+["131","Good Girl","W",["sweet","warm","sensual"]],["132","My Way","W",["floral","citrus","elegant"]],
+["133","Paradoxe","W",["floral","amber","sweet"]],["148W","Goddess","W",["vanilla","floral","warm"]],
+["151","Guilty","W",["floral","warm","sensual"]],["153","Chloé","W",["floral","powdery","elegant"]],
+["161","Born in Roma Intense","W",["vanilla","sweet","sensual"]],
+["001","One Million","M",["sweet","spicy","warm"]],["002","Acqua di Gio","M",["fresh","citrus","clean"]],
+["003","Fahrenheit","M",["woody","spicy","warm"]],["004","The One","M",["warm","spicy","sensual"]],
+["016","Le Male","M",["sweet","vanilla","spicy"]],["020","La Nuit de l'Homme","M",["warm","woody","sensual"]],
+["021","Light Blue Homme","M",["fresh","citrus","clean"]],["022","Terre d'Hermès","M",["woody","citrus","elegant"]],
+["030","Black XS","M",["sweet","spicy","woody"]],["032","Spicebomb","M",["spicy","warm","sweet"]],
+["038","Bleu de Chanel","M",["fresh","woody","elegant"]],["048","Allure Homme","M",["citrus","woody","elegant"]],
+["061","Invictus","M",["fresh","sweet","aquatic"]],["062","Intenso","M",["woody","warm","sensual"]],
+["068","Aventus","M",["fruity","woody","fresh"]],["078","Ultramale","M",["sweet","vanilla","sensual"]],
+["079","MYSLF","M",["woody","fresh","elegant"]],["084","Dylan Blue","M",["fresh","woody","aquatic"]],
+["087","Wanted","M",["spicy","woody","sweet"]],["088","Man in Black","M",["warm","spicy","woody"]],
+["091","Chrome","M",["fresh","citrus","clean"]],["094","Sauvage","M",["fresh","spicy","woody"]],
+["108","Green Irish Tweed","M",["fresh","green","woody"]],["140","Eros","M",["sweet","fresh","sensual"]],
+["147M","Born in Roma Intense","M",["vanilla","warm","sensual"]],["150","Hugo","M",["fresh","green","woody"]],
+["152","Guilty Pour Homme","M",["woody","citrus","elegant"]],["157","Boss The Scent","M",["warm","spicy","sensual"]],
+["160","Burberry for Men","M",["woody","fresh","elegant"]],["164","Paradigme","M",["woody","fresh","intense"]],
+["044","Silver Mountain Water","U",["fresh","aquatic","clean"]],["054","Black Orchid","U",["dark","floral","warm"]],
+["072","Patchouli","U",["woody","warm","oriental"]],["073","Himalaya","U",["fresh","woody","citrus"]],
+["099","Mandarino di Amalfi","U",["citrus","fresh","fruity"]],["100","White Aoud","U",["woody","oriental","intense"]],
+["101","Velvet Amber Skin","U",["amber","warm","sensual"]],["102","Velvet Amber Sun","U",["amber","warm","spicy"]],
+["105","Intense Café","U",["sweet","coffee","sensual"]],["106","Fucking Fabulous","U",["woody","warm","intense"]],
+["110","Kirke","U",["fruity","sweet","sensual"]],["111","Lost Cherry","U",["fruity","sweet","sensual"]],
+["112","Neroli Portofino","U",["citrus","fresh","clean"]],["114","Ombre Nomade","U",["woody","oriental","intense"]],
+["117","Tobacco Vanille","U",["vanilla","warm","sweet"]],["118","Baccarat Rouge 540","U",["amber","sweet","woody"]],
+["125","Sole di Positano","U",["citrus","fresh","fruity"]],["126","Soleil Blanc","U",["coconut","floral","warm"]],
+["127","Oud Wood","U",["woody","oriental","warm"]],["128","Vanille Fatale","U",["vanilla","warm","sweet"]],
+["129","Erba Pura","U",["fruity","fresh","sweet"]],["130","Megamare","U",["aquatic","fresh","intense"]],
+["134","Bitter Peach","U",["fruity","sweet","fresh"]],["137","Naxos","U",["sweet","warm","citrus"]],
+["138","Wood Whisper","U",["woody","fresh","elegant"]],["139","Les Sables Roses","U",["rose","warm","oriental"]],
+["141","Dubai Tabrath","U",["oriental","warm","spicy"]],["142","Oud Leather","U",["leather","woody","intense"]],
+["143","Vanilla Powder","U",["vanilla","powdery","sweet"]],["144","Bianco Latte","U",["sweet","vanilla","creamy"]],
+["146","Rouge","U",["fruity","warm","sweet"]],["155","CK One","U",["fresh","citrus","clean"]]
+];
+
+let step=0, answers=[];
+function begin(){document.getElementById("start").classList.add("hidden");document.getElementById("quiz").classList.remove("hidden");render()}
+function render(){
+ const q=questions[step], chosen=answers[step]||[], pct=Math.round((step+1)/questions.length*100);
+ document.getElementById("counter").textContent=`Frage ${step+1} von ${questions.length}`;
+ document.getElementById("fill").style.width=pct+"%";
+ document.getElementById("question").textContent=q[0];
+ const box=document.getElementById("options");box.innerHTML="";
+ q[1].forEach((item,i)=>{
+   const b=document.createElement("button");b.type="button";b.className="option"+(chosen.includes(i)?" selected":"");
+   b.innerHTML=item[0]+' <span class="check">✓</span>';
+   b.onclick=()=>{let a=answers[step]||[];a=a.includes(i)?a.filter(x=>x!==i):a.concat(i);answers[step]=a;render()};
+   box.appendChild(b);
+ });
+ document.getElementById("back").disabled=step===0;
+ document.getElementById("next").disabled=chosen.length===0;
+ document.getElementById("next").textContent=step===questions.length-1?"✨ Meine Düfte finden":"Weiter →";
+}
+function previous(){if(step>0){step--;render()}}
+function next(){if(!(answers[step]||[]).length)return;if(step<questions.length-1){step++;render()}else showResult()}
+function showResult(){
+ const score={};let genders=[];
+ answers.forEach((arr,qi)=>(arr||[]).forEach(i=>{
+   const v=questions[qi][1][i][1];
+   if(qi===0)genders.push(v);else (Array.isArray(v)?v:[]).forEach(t=>score[t]=(score[t]||0)+1);
+ }));
+ const pool=genders.length?catalog.filter(x=>genders.includes(x[2])||x[2]==="U"):catalog;
+ const ranked=pool.map(x=>({...x,score:x[3].reduce((s,t)=>s+(score[t]||0)*3,0)})).sort((a,b)=>b.score-a.score);
+ const top=ranked.slice(0,3);
+ const labels={fresh:"Frisch",clean:"Clean",floral:"Blumig",elegant:"Elegant",fruity:"Fruchtig",sweet:"Süß",vanilla:"Vanille",sensual:"Sinnlich",intense:"Intensiv",oriental:"Orientalisch",woody:"Holzig",spicy:"Würzig",warm:"Warm",citrus:"Zitrisch",powdery:"Pudrig",amber:"Amber",coffee:"Kaffee",aquatic:"Aquatisch",rose:"Rose",coconut:"Kokos",creamy:"Cremig",green:"Grün",dark:"Dunkel",leather:"Leder"};
+ const profile=Object.entries(score).sort((a,b)=>b[1]-a[1]).slice(0,4).filter(x=>x[1]>0).map(x=>labels[x[0]]||x[0]).join(" • ");
+ document.getElementById("quiz").classList.add("hidden");
+ const r=document.getElementById("result");r.classList.remove("hidden");
+ r.innerHTML=`<div class="card"><div class="center"><div style="font-size:50px">✨</div><div class="muted">DEIN DUFTPROFIL</div><h2>${profile||"Vielseitig"}</h2><p class="muted">Diese drei Chogan-Düfte passen anhand deiner Antworten am besten zu deinem Profil:</p></div>
+ ${top.map((x,i)=>`<div class="duft"><strong>${i===0?"🥇":i===1?"🥈":"🥉"} Chogan Nr. ${x[0]}</strong><div style="font-size:19px;margin-top:5px">${x[1]}</div><div class="muted" style="margin-top:5px">${x[3].map(t=>labels[t]||t).join(" • ")}</div></div>`).join("")}
+ <p class="muted" style="margin-top:20px">💡 Am besten Platz 1 und 2 auf der Haut testen. Düfte können sich bei jeder Person unterschiedlich entwickeln.</p>
+ <div class="center"><button class="primary" onclick="restart()">🔄 Nochmal testen</button></div></div>`;
+}
+function restart(){step=0;answers=[];document.getElementById("result").classList.add("hidden");document.getElementById("quiz").classList.remove("hidden");render()}
+</script>
+</body>
+</html>
